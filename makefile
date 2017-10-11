@@ -1,4 +1,4 @@
-all: clear_W
+all: execute
 	@echo "Sucesso!"
 
 compile:
@@ -13,9 +13,12 @@ clear: compile
 	@rm -f *.bbl
 
 clear_W: compile
-	@del *.synctex.gz
-	@del *.aux
-	@del *.log
-	@del *.out
-	@del *.blg
-	@del *.bbl
+	@del *.synctex.gz 2>NUL
+	@del *.aux 2>NUL
+	@del *.log 2>NUL
+	@del *.out 2>NUL
+	@del *.blg 2>NUL
+	@del *.bbl 2>NUL
+
+execute: clear_W
+	@start "" main.pdf
