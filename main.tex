@@ -18,24 +18,203 @@
 \begin{document}
 
 	\maketitle
-
-	\begin{abstract}
-		This paper makes use of known trigonometric relations in order to develop a
-		computational strategy that allows to calculate the sine of any angles of the
-		trigonometric circle from the first six terms of the Taylor Series that defines it,
-		so that	the result has ten decimal digits of precision in the minor possible computational
-		time.
-	\end{abstract}
+	%
+	% \begin{abstract}
+	% 	This paper makes use of known trigonometric relations in order to develop a
+	% 	computational strategy that allows to calculate the sine of any angles of the
+	% 	trigonometric circle from the first six terms of the Taylor Series that defines it,
+	% 	so that	the result has ten decimal digits of precision in the minor possible computational
+	% 	time.
+	% \end{abstract}
 
 	\begin{resumo}
-		Este artigo faz uso de relações trigonométricas conhecidas a fim de desenvolver
-		uma estratégia computacional que permita calcular o seno de quaisquer ângulos do
-		círculo trigonométrico a partir dos seis primeiros termos da série de Taylor que
-		a define de forma que o resultado disponha de dez dígitos decimais de precisão no
-		menor tempo	computacional possível.
+		Este artigo faz uso de métodos algébricos e numéricos para apresentar uma solução computacional
+		no problema da triangulação de sinais, usando como fator de cálculo a potência da fonte emissora,
+		com uma precisão específica no menor tempo computacional possível. Além disso, são discutidos, neste artigo,
+		fatores que podem levar à imprecisão das estimativas.
 	\end{resumo}
 
   \section{Introdução}
-  
+	\label{sec:introducao}
+	%TODO: Intrudução
+	%É de grande importância ser capaz de estimar...
+	Embora existam diversas formas de analisar as características dos dados de sinais para o cômputo
+	da estimativa (natureza do sinal, intervalos de tempo entre envio e recebimento, ângulo do sinal, etc),
+	será utilizada a potência do sinal. Isso porque existem modelos matemáticos mais bem
+	estruturados e precisos, que são capazes de embasar com maior fidelidade a estimativa.
 
+	\section{Metodologia}
+	\label{sec:metodologia}
+	%TODO: Explicar como a bagaça será feita
+	No modelo adotado para experimentação, elaborado por \cite{polidorio:triangulacao}, a fonte emissora é disposta
+	em um sistema de coordenadas de três dimensões onde $m$ receptores são arranjados em posições $(x_k, y_k, z_k)$, onde
+	cada coordenada indica a distância (em \underline{metros}) do receptor $k$ até a origem seguindo o respectivo eixo. Isso implica que as coordenadas
+	são dadas em metros, o que servirá de apoio para desenvolvimento dos cálculos.
+	Os casos experimentais de \cite{polidorio:triangulacao} utilizam $5$ receptores e serão abordados posteriormente.
+
+	\section{Fundamentação Teórica}
+	\label{sec:fund_teor}
+	%TODO: Expor como serão estimadas as distâncias / Abordar os métodos
+	%Como um receptor se comporta
+
+	\paragraph{Estimativa da Distância em Função da Potência do Sinal:}
+	A potência do sinal (em dBm) da fonte emissora serve como parâmetro para a estimativa da distância.
+	Tal estimativa é baseada na \textbf{potência de referência} ($p^k_0$), medida entre o emissor e o receptor $k$ a $1$ metro de distância,
+	\textbf{fator de atenuação} do sinal do emissor até o receptor $k$ ($\mathcal{L}^k$). Assim, pode-se aferir, com certa precisão, a \textbf{distância} da fonte emissora em relação ao receptor $k$
+	($d_k$) baseada na \textbf{potência do sinal} registrado pelo receptor $k$ ($p_k$) através da seguinte equação:
+	\begin{align}
+		\mathlarger{d_k = 10^{\frac{p^k_0 - p^k}{10\mathcal{L}^k}}} \label{eq:distancia}
+	\end{align}
+
+	\paragraph{Método de Newton-Raphson:}
+	\begin{align}
+			x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)} \label{eq:nr}
+	\end{align}
+
+	\section{Desenvolvimento}
+	\label{sec:dev}
+	%TODO: Apresentar as equações com base nos casos testes e o algoritmo
+	Esta seção será particionada em duas outras seções: \textbf{Desenvolvimento Matemático}, onde
+	se deseja construir a solução matemática para o problema da estimativa da triangulação de sinais;
+	\textbf{Desenvolvimento Computacional}, onde se deseja implementar os princípios e a lógica da
+	solução desenvolvidos matemáticamente para a construção de uma solução computacional que seja
+	o mais rápida possível para determinada precisão, levando em conta demais aspectos e
+	limitações computacionais.
+
+	\subsection{Desenvolvimento Matemático}
+	\label{sec:dev_math}
+	Supõe-se, portanto, $m$ receptores dispostos em um sistema de coordenadas tridimensional, conforme
+	exposto na Seção \ref{sec:metodologia}. Para cada sinal que a fonte emissora disparar, os $m$
+	receptores o receberão e, com base em sua potência, calcularão, individualmente, a distância
+	estimada que cada qual está do emissor ($d_k$, conforme a equação \ref{eq:distancia}).
+
+	Conforme já mencionado, cada receptor $k$ é capaz de cobrir uma região esférica.
+	Assim, cada receptor $k$ contribuirá com uma equação da forma
+	\begin{align}
+		f_k(x,y,z) = (x - x_k)^2 + (y - y_k)^2 + (z - z_k)^2 = d_k^2 \label{eq:receptor}
+	\end{align}
+	onde
+	\begin{itemize}
+		\item $x_k, y_k, z_k$ são as coordenadas do receptor $k$ (conhecidas);
+		\item $x, y, z$ são as coordenadas da fonte emissora (descconhecidas);
+		\item $d_k$ é a distância estimada do receptor à fonte (conhecida).
+	\end{itemize}
+
+	Serão, portanto, $m$ equações não-lineares da forma acima. Logo, ter-se-á:
+
+	\begin{align*}
+		F(x,y,z) =
+		\left \{
+		\begin{array}{cl}
+			(x - x_1)^2 + (y - y_1)^2 + (z - z_1)^2 - d_1^2 = 0 \\
+			(x - x_2)^2 + (y - y_2)^2 + (z - z_2)^2 - d_2^2 = 0 \\
+			\vdots \\
+			(x - x_m)^2 + (y - y_m)^2 + (z - z_m)^2 - d_m^2 = 0 \\
+		\end{array}
+		\right.
+	\end{align*}
+	$$\iff$$
+	\begin{align}
+		F(x,y,z) =
+		\left \{
+		\begin{array}{cl}
+			f_1(x,y,z) \\
+			f_2(x,y,z) \\
+			\vdots \\
+			f_m(x,y,z) \\
+		\end{array}
+		\right.
+		\label{eq:funcao}
+	\end{align}
+
+	Deseja-se, portanto, obter as raízes de $F$, pois $F(x,y,z) = 0$ implica que a posição
+	da fonte emissora, de acordo com todos os $m$ receptores é melhor estimada em $(x,y,z)$.
+	Para a obtenção das raízes sistemas de equações polinomais não lineares, utilizar-se-á o
+	\textbf{Método de Newton-Raphson}.
+
+	Conforme exposto na Seção \ref{sec:fund_teor}, o Método de Newton-Raphson permite encontrar
+	raízes em um sistema de equações conforme $F$ descreve. Para tanto, o processo envolve a manipulação
+	de matrizes que representarão o sistema de equações. Assim, a partir de \ref{eq:funcao}, tem-se
+	\begin{align*}
+		F(x,y,z) =
+		\begin{bmatrix}
+			f_1(x,y,z) \\
+			f_2(x,y,z) \\
+			\vdots \\
+			f_m(x,y,z)
+		\end{bmatrix}_{m\times1}
+	\end{align*}
+
+	Confome a equação \ref{eq:nr}, a $(i+1)$-ésima estimativa da raiz de $F$ pode ser feita através de:
+	\begin{align}
+		\begin{bmatrix}
+	    x_{i+1}\\
+			y_{i+1}\\
+			z_{i+1}
+		\end{bmatrix}
+		=
+		\begin{bmatrix}
+	    x_i\\
+			y_i\\
+			z_i
+		\end{bmatrix}
+		-
+		\frac{F(x_i,y_i,z_i)}{F'(x_i, y_i, z_i)}
+		\label{eq:part_nr}
+	\end{align}
+
+	Percebe-se, contudo, que $F'(x, y, z)$ na verdade será descrita por uma matriz de derivadas
+	parciais, uma vez que será necessário calcular a derivada primeira para cada um dos argumentos
+	de $F$. Para tanto, faz-se uso da chamada \textbf{Matriz Jacobiana} (abordada na Seção \ref{sec:fund_teor}),
+	dada por:
+	\begin{align*}
+		F'(x,y,z) = J(F(x,y,z)) =
+		\begin{bmatrix}
+			\pder{f_1}{x} & \pder{f_1}{y} & \pder{f_1}{z}\\
+			\pder{f_2}{x} & \pder{f_2}{y} & \pder{f_2}{z}\\
+			\vdots & \vdots & \vdots \\
+			\pder{f_m}{x} & \pder{f_m}{y} & \pder{f_m}{z}\\
+		\end{bmatrix}_{m\times3}
+	\end{align*}
+
+	Nota-se, que a divisão exposta em \ref{eq:part_nr} pode ser expressa como
+	(omitindo os parâmetros, por comodidade):
+	$$\frac{F}{F'} \iff \frac{F_{m\times1}}{J_{m\times3}} \iff F_{m\times1} \times J_{m\times3}^{-1} \iff F_{1 \times m}^{T} \times J_{m\times3}^{-1} $$
+	onde a notação $-1$ indica \textit{matriz inversa} e a notação $T$ indica \textit{matriz transposta}.
+	Percebe-se, contudo, que, se $m \neq 3$, $J$ não é inversível, uma vez que uma matriz deve ser
+	quadrada para ser detentora de tal proporiedade.
+
+	Dessa forma, é necessário normalizar o sistema de equações exposto em $F$, de modo que se obtenha $n$ equações
+	para as $n$ variáveis de $F$. Ou seja, deve-se ter um sistema com $3$ equações apenas. Para tanto, utilizar-se-á
+	o \textbf{Método dos Mínimos Quadrados}.
+
+	Conforme explanado na Seção \ref{sec:fund_teor}, o Método dos Mínimos Quadrados pode ser aplicado
+	para normalizar sistemas de equações, removendo ambiguidades sem descartar equações.
+
+	\subsection{Desenvolvimento Computacional}
+	\label{sec:dev_comp}
+	Esta seção será particionada nos três pontos necessários para a construção da desejada solução
+	computacional: \textbf{Implementação}, onde a solução matemática exposta em \ref{sec:dev_math}
+	será codificada, bem como as estruturas de dados necessárias, a fim de garantir uma determinada
+	precisão; \textbf{Otimização}, onde serão abordados aspectos referentes ao tempo computacional
+	e formas de minimizá-lo; \textbf{Limitações}, onde serão expostas as limitações da solução e suas
+	possíveis falhas.
+	\subsubsection{Implementação}
+	\label{sec:imple}
+	\subsubsection{Otimização}
+	\label{sec:opt}
+	\subsubsection{Limitações}
+	\label{sec:lim}
+
+	\section{Discussão}
+	\label{sec:discussao}
+	%TODO: Debater a respeio da eficiência do algoritmo, imprecisão e erros nos dados e como consertar
+
+	\section{Conclusão}
+	\label{sec:conclusao}
+	%TODO: Expor a análise a respeito do problema e como é solucionado pelo que foi proposto.
+
+	%TODO: Corrigir as referências
+	\bibliographystyle{sbc}
+	\bibliography{references}
 \end{document}
