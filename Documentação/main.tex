@@ -128,64 +128,15 @@
 
 	Deseja-se, portanto, obter as raízes de $F$, pois $F(x,y,z) = 0$ implica que a posição
 	da fonte emissora, de acordo com todos os $m$ receptores é melhor estimada em $(x,y,z)$.
-	Para a obtenção das raízes sistemas de equações polinomais não lineares, utilizar-se-á o
-	\textbf{Método de Newton-Raphson}.
-
-	Conforme exposto na Seção \ref{sec:fund_teor}, o Método de Newton-Raphson permite encontrar
-	raízes em um sistema de equações conforme $F$ descreve. Para tanto, o processo envolve a manipulação
-	de matrizes que representarão o sistema de equações. Assim, a partir de \ref{eq:funcao}, tem-se
-	\begin{align*}
-		F(x,y,z) =
-		\begin{bmatrix}
-			f_1(x,y,z) \\
-			f_2(x,y,z) \\
-			\vdots \\
-			f_m(x,y,z)
-		\end{bmatrix}_{m\times1}
-	\end{align*}
-
-	Confome a equação \ref{eq:nr}, a $(i+1)$-ésima estimativa da raiz de $F$ pode ser feita através de:
-	\begin{align}
-		\begin{bmatrix}
-	    x_{i+1}\\
-			y_{i+1}\\
-			z_{i+1}
-		\end{bmatrix}
-		=
-		\begin{bmatrix}
-	    x_i\\
-			y_i\\
-			z_i
-		\end{bmatrix}
-		-
-		\frac{F(x_i,y_i,z_i)}{F'(x_i, y_i, z_i)}
-		\label{eq:part_nr}
-	\end{align}
-
-	Percebe-se, contudo, que $F'(x, y, z)$ na verdade será descrita por uma matriz de derivadas
-	parciais, uma vez que será necessário calcular a derivada primeira para cada um dos argumentos
-	de $F$. Para tanto, faz-se uso da chamada \textbf{Matriz Jacobiana} (abordada na Seção \ref{sec:fund_teor}),
-	dada por:
-	\begin{align*}
-		F'(x,y,z) = J(F(x,y,z)) =
-		\begin{bmatrix}
-			\pder{f_1}{x} & \pder{f_1}{y} & \pder{f_1}{z}\\
-			\pder{f_2}{x} & \pder{f_2}{y} & \pder{f_2}{z}\\
-			\vdots & \vdots & \vdots \\
-			\pder{f_m}{x} & \pder{f_m}{y} & \pder{f_m}{z}\\
-		\end{bmatrix}_{m\times3}
-	\end{align*}
-
-	Nota-se, que a divisão exposta em \ref{eq:part_nr} pode ser expressa como
-	(omitindo os parâmetros, por comodidade):
-	$$\frac{F}{F'} \iff \frac{F_{m\times1}}{J_{m\times3}} \iff F_{m\times1} \times J_{m\times3}^{-1} \iff F_{1 \times m}^{T} \times J_{m\times3}^{-1} $$
-	onde a notação $-1$ indica \textit{matriz inversa} e a notação $T$ indica \textit{matriz transposta}.
-	Percebe-se, contudo, que, se $m \neq 3$, $J$ não é inversível, uma vez que uma matriz deve ser
-	quadrada para ser detentora de tal proporiedade.
-
-	Dessa forma, é necessário normalizar o sistema de equações exposto em $F$, de modo que se obtenha $n$ equações
-	para as $n$ variáveis de $F$. Ou seja, deve-se ter um sistema com $3$ equações apenas. Para tanto, utilizar-se-á
-	o \textbf{Método dos Mínimos Quadrados}.
+	Para tanto, deve-se linearizar o sistema. Dessa forma,
+	\[
+	\begin{array}{cl}
+		x^2 - 2x_1x + x_1^2 + y^2 - 2y_1y + y_1^2 + z^2 - 2z_1z + z_1^2 = d_1\\
+		x^2 - 2x_2x + x_2^2 + y^2 - 2y_2y + y_2^2 + z^2 - 2z_2z + z_2^2 = d_2\\
+		\vdots \\
+		x^2 - 2x_mx + x_m^2 + y^2 - 2y_my + y_m^2 + z^2 - 2z_mz + z_m^2 = d_m\\
+	\end{array}
+	\]
 
 	Conforme explanado na Seção \ref{sec:fund_teor}, o Método dos Mínimos Quadrados pode ser aplicado
 	para normalizar sistemas de equações, removendo ambiguidades sem descartar equações.
