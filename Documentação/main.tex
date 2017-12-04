@@ -3,7 +3,7 @@
 
 \sloppy
 
-\title{Estimação de Localização com Triangulação de Sinais\\Baseado na Potência da Fonte Emissora}
+\title{Estimativa de Localização com Triangulação de Sinais\\Baseado na Potência da Fonte Emissora}
 
 %TODO: Inserir nome
 \author{Ricardo Henrique Brunetto\inst{1}}
@@ -66,10 +66,11 @@
 		\mathlarger{d_k = 10^{\frac{p^k_0 - p^k}{10\mathcal{L}^k}}} \label{eq:distancia}
 	\end{align}
 
-	\paragraph{Método de Newton-Raphson:}
-	\begin{align}
-			x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)} \label{eq:nr}
-	\end{align}
+	% \paragraph{Método de Newton-Raphson:}
+	% \begin{align}
+	% 		x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)} \label{eq:nr}
+	% \end{align}
+	%TODO: MINIMOS QUADRADAOS
 
 	\section{Desenvolvimento}
 	\label{sec:dev}
@@ -128,18 +129,102 @@
 
 	Deseja-se, portanto, obter as raízes de $F$, pois $F(x,y,z) = 0$ implica que a posição
 	da fonte emissora, de acordo com todos os $m$ receptores é melhor estimada em $(x,y,z)$.
-	Para tanto, deve-se linearizar o sistema. Dessa forma,
+	Conforme explanado anteriormente, $x_k, y_k, z_k$ são conhecidas e, portanto podem ser
+	agrupadas de forma que se tenha:
 	\[
 	\begin{array}{cl}
-		x^2 - 2x_1x + x_1^2 + y^2 - 2y_1y + y_1^2 + z^2 - 2z_1z + z_1^2 = d_1\\
-		x^2 - 2x_2x + x_2^2 + y^2 - 2y_2y + y_2^2 + z^2 - 2z_2z + z_2^2 = d_2\\
+		x^2 + y^2 + z^2 - 2(x_1x + y_1y + z_1z) = c_1\\
+		x^2 + y^2 + z^2 - 2(x_2x + y_2y + z_2z) = c_2\\
 		\vdots \\
-		x^2 - 2x_mx + x_m^2 + y^2 - 2y_my + y_m^2 + z^2 - 2z_mz + z_m^2 = d_m\\
+		x^2 + y^2 + z^2 - 2(x_mx + y_my + z_mz) = c_m\\
+	\end{array}
+	\]
+	onde $c_k = d_k - (x_k^2 + y_k^2 + z_k^2)$.
+
+	É necessário, nesse ponto, remover a não-linearidade do sistema, ou seja, transformá-lo
+	em um sistema de equações lineares. Isso porque o método de resolução que se pretende
+	aplicar é válido apenas para sistemas lineares. A técnica utilizada será reescrever o sistema
+	como uma combinação linear das equações que se tem, o que não altera o sistema em si. Tem-se:
+	\[
+	\begin{array}{cl}
+		f_1-f_2 = 2x(x_2-x_1) + 2y(y_2-y_1) + 2z(z_2-z_1) = c_2-c_1\\
+		f_1-f_3 = 2x(x_3-x_1) + 2y(y_3-y_1) + 2z(z_3-z_1) = c_3-c_1\\
+		\vdots \\
+		f_1-f_m = 2x(x_m-x_1) + 2y(y_m-y_1) + 2z(z_m-z_1) = c_m-c_1\\
+		f_2-f_m = 2x(x_m-x_2) + 2y(y_m-y_2) + 2z(z_m-z_2) = c_m-c_2\\
 	\end{array}
 	\]
 
-	Conforme explanado na Seção \ref{sec:fund_teor}, o Método dos Mínimos Quadrados pode ser aplicado
+	Fazendo uso da notação matricial, tem-se:
+	\[
+	\begin{bmatrix}
+		2x(x_2-x_1) & 2y(y_2-y_1) & 2z(z_2-z_1)\\
+		2x(x_3-x_1) & 2y(y_3-y_1) & 2z(z_3-z_1)\\
+		\vdots & \vdots & \vdots\\
+		2x(x_m-x_1) & 2y(y_m-y_1) & 2z(z_m-z_1)\\
+		2x(x_m-x_2) & 2y(y_m-y_2) & 2z(z_m-z_2)
+	\end{bmatrix}_{m\times3}
+	=
+	\begin{bmatrix}
+		c_2-c_1\\
+		c_3-c_1\\
+		\vdots\\
+		c_m-c_1\\
+		c_m-c_2
+	\end{bmatrix}_{m\times1}
+	\]
+	$$\iff$$
+	\[
+	\begin{bmatrix}
+		2(x_2-x_1) & 2(y_2-y_1) & 2(z_2-z_1)\\
+		2(x_3-x_1) & 2(y_3-y_1) & 2(z_3-z_1)\\
+		\vdots & \vdots & \vdots\\
+		2(x_m-x_1) & 2(y_m-y_1) & 2(z_m-z_1)\\
+		2(x_m-x_2) & 2(y_m-y_2) & 2(z_m-z_2)
+	\end{bmatrix}_{m\times3}
+	\times
+	\begin{bmatrix}
+		x\\
+		y\\
+		z
+	\end{bmatrix}_{3\times1}
+	=
+	\begin{bmatrix}
+		c_2-c_1\\
+		c_3-c_1\\
+		\vdots\\
+		c_m-c_1\\
+		c_m-c_2
+	\end{bmatrix}_{m\times1}
+	\]
+	$$\iff$$
+	\begin{equation}A_{m\times3} \times X_{3\times1} = B_{m\times1}\label{eq:res}\end{equation}
+
+	Nota-se que, para $m=3$, então $A$ é uma matriz quadrada e, então, é válido:
+	\[A^{-1}\times A \times X = A^{-1}\times B\]
+	$$\iff$$
+	\[I \times X = A^{-1}\times B \]
+	$$\iff$$
+	\[X = A^{-1}\times B\]
+	e tem-se a resolução do sistema.
+
+	Contudo, para situações em que $m>3$, tem-se um \textbf{Sistema Redundante}. Conforme explanado na
+	Seção \ref{sec:fund_teor}, o Método dos Mínimos Quadrados pode ser aplicado
 	para normalizar sistemas de equações, removendo ambiguidades sem descartar equações.
+
+	Nota-se que, $A_{m\times3}$ possui transposta $A_{3\times m}^t$. Nota-se, ainda que:
+	$$(A^t_{3\times m} \times A_{m\times3}) = A^tA_{3\times3}$$
+	que é uma matriz quadrada e, portanto, potencialmente inversível.
+
+	Partindo do fato de que $det(A^tA) \neq 0$ e do desenvolvimento previamente realizado em \ref{eq:res},
+	tem-se:
+	\[A^t \times A \times X = A^t \times B\]
+	$$\iff$$
+	\[(A^t\times A)^{-1}(A^t \times A) \times X = (A^t\times A)^{-1} \times A^t \times B\]
+	$$\iff$$
+	\[I \times X = (A^t\times A)^{-1} \times A^t \times B\]
+	$$\iff$$
+	\begin{equation}\label{eq:final}X = (A^t\times A)^{-1} \times A^t \times B\end{equation}
 
 	\subsection{Desenvolvimento Computacional}
 	\label{sec:dev_comp}
@@ -151,18 +236,157 @@
 	possíveis falhas.
 	\subsubsection{Implementação}
 	\label{sec:imple}
+	O desenvolvimento será feito em \textbf{MATLAB}, por apresentar um grande conjunto de bibliotecas
+	que auxiliam operações básicas e ter naturalidade em trabalhar com matrizes, o que, de acordo com o
+	desenvolvimento matemático prévio, é peça-chave para a resolução do problema.
+
+	Incia-se com o formato do arquivo que servirá de entrada. Para cada linha $k$ do arquivo, espera-se
+	$5$ valores separados por espaços em branco, sendo eles referentes ao $k$-ésimo receptor:
+
+	$x_k\,y_k\,z_k\,p^k_0\,\mathcal{L}^k$
+
+	Além disso, tem-se uma função específica para tratar a entrada dos dados e dividí-la em $3$ matrizes:
+	\begin{itemize}
+		\item $M$ que conterá as coordenadas $x_k, y_k, z_k$, devendo ter ordem $m\times3$;
+		\item $P$ que conterá os valorees $p^k_0$, devendo ter ordem $m\times1$;
+		\item $L$ que conterá os valorees $\mathcal{L}^k$, devendo ter ordem $m\times1$.
+	\end{itemize}
+
+	%TODO:Função pra fazer isso ai
+
+	Após realizar a leitura da entrada, será necessário calcular os valores de raio ($d_k$), que serão
+	armazenados em uma matriz coluna $D$. A função resposável por realizar tal cálculo está abaixo:
+
+	%TODO: Função pra fazer isso ai
+
+	Em seguida, calcula-se os coeficientes das diferenças entre as equações, que foram representadas
+	pelas matrizes $A$ e $B$, conforme descrito na Seção \ref{sec:dev_math}. No código, também refere-se às matrizes
+	em questão por $A$ e $B$. Tal função é descrita abaixo:
+
+	%TODO: Função pra fazer isso ai
+
+	Por fim, com as matrizes $A$, $X$ e $B$, é possível implementar a equação \ref{eq:final} da seguinte
+	forma:
+
+	%TODO: Função pra fazer isso ai
+
 	\subsubsection{Otimização}
 	\label{sec:opt}
+	Aqui alguns trechos de código são resumidos a fim de se descartar operações desnecessárias.
+	Como as implementações das funções em MATLAB são otimizadas \cite{matlabguide}, não há preocupação
+	em alterar seus códigos. Assim, a otimização consiste em poupar operações desnecessárias, o que resulta
+	no código abaixo:
+
 	\subsubsection{Limitações}
 	\label{sec:lim}
+	As limitações relacionadas à solução não são pertinentes apenas à implementação do método. Contudo,
+	serão essas as abordadas neste tópico, ou seja, aqui serão tratadas apenas os erros e falhas relativos
+	à codificação da solução e sua execução pela máquina. As possíveis falhas relativas ao modelo e aos
+	dados serão comentadas na Seção \ref{sec:discussao}.
+
+	A implementação é limitada, principalmente, pela capacidade representativa dos dados numéricos na máquina.
+	Independente do sistema em que se trabalha, há uma limitação intríseca em relação à quantidade de bits disponíveis
+	para representar os dados, que é sempre finita. Contudo, alguns valores decimais exigem representação em infinitos
+	bits, o que obviamente não é possível.
+
+	Nesse contexto, existem as operações de arredondamento e truncamento executadas pelo hardware ao trabalhar com
+	os valores no padrão IEEE-754. Os detalhes pertinentes ao arredondamento e truncamento não serão abordados em detalhes,
+	visto que fogem do escopo geral deste artigo, mas podem ser encontrados em \cite{polidorio:ieee}.
+
+	A influência destas operações no resultado final não surte efeito significativo dependendo da precisão que se deseja
+	alcançar e da quantidade de operações que se executa. Isso porque o erro é cumulativo, ou seja, vai se acumulando conforme
+	são executadas operações que o causam. Não é equivocado afirmar que todas as operações computacionais podem imputar erro
+	aos dados em que se trabalha. Entretanto, algumas operações causam erros mais significativos que outras, como é o caso da
+	multiplicação e da divisão.
+
+	Como já abordado na Seção \ref{sec:opt}, o MATLAB conta com funções já otimizadas que, internamente, reduzem a quantidade de operações
+	necessárias para atingir seus resultados, o que já contribui para a minimização nos erros. Por outro lado, na mesma Seção, foram
+	reduzidas as operações desnecessárias, o que também poupa espaço de armazenamento e diminui os erros em relação às equações.
 
 	\section{Discussão}
 	\label{sec:discussao}
 	%TODO: Debater a respeio da eficiência do algoritmo, imprecisão e erros nos dados e como consertar
+	Aqui nesta seção serão discorridos aspectos a respeito da eficiência do método utilizado, as imprecisões e os erros
+	nos dados e no modelo e soluções viáveis que podem ser aplicadas a fim de minimizá-los.
+
+	Primeiramente, é importante salientar que extinguir o erro é quase impossível. Isso porque, ele pode estar vinculado
+	à máquina processadora, conforme descrito na Seção \ref{sec:lim}, ou nos próprios dados e no modelo. Esse segundo caso é o alvo
+	da discussão.
+
+	Em relação ao modelo, fez-se uso supondo que cada receptor é capaz de captar em determinado raio de alcance, definido pela
+	posição relatada pelo mesmo a respeito da fonte emissora. Nota-se, contudo, que nem sempre isso se aplica. Existem casos
+	onde o receptor não consegue captar em perfeita circunferência. Entretanto, este fato não contribui para um erro significativo
+	no desenvolvimento. Por outro lado, é aplicado um método de resolução baseado na Álgebra Linear, relativo à manipulação de matrizes. Apesar
+	de ser analiticamente descritível, a dita manipulação exige a realização de muitas operações computacionais (somas, subtrações,
+	multiplicações e divisões) o que, conforme salientado previamente, pode contribuir para erros ao serem executadas cumulativamente.
+
+	No entanto, o erro principal encontra-se nos dados. Isso porque, principalmente, trabalha-se com \textbf{ondas eletromagnéticas}. Tais
+	ondas sofrem interferência direta do meio em que estão inseridas, pois não se intenta executar os experimentos (tampouco as aplicações)
+	no vácuo ou em ambientes eletromagneticamente isolados. Dessa forma, as informações contidas nas ondas podem ser perdidas conforme a distância
+	percorrida. Assim, tem-se o fator de atenuação do $k$-ésimo receptor ($\mathcal{L}^k$) não sendo exato, pois não é possível prever com precisão
+	o quanto ter-se-á de interferência do meio em relação à potência do sinal da onda, visto que tal informação é dependente do meio. Isso implica
+	que pequenas oscilações no ambiente podem ocasionar graves discrepâncias nos dados e isso \textbf{não} pode ser controlado.
+
+	Para tentar minimizar os erros dos dados, estima-se utilizar uma quantidade maior de medições, ou seja, uma constelação de receptores maior que $3$.
+	Dessa forma, embora seja uma \textit{triangulação} de sinais, utiliza-se uma quantidade maior para que a medição seja mais precisa. É fato que
+	cada um dos receptores terá um erro embutido nos dados que captará da fonte emissora. Contudo, espera-se que a média desses erros minimize o erro geral,
+	uma vez que algumas medições podem ser maiores que seu valor real, enquanto outras podem ser menores. Assim, apesar de haver uma quantidade maior
+	de equações e uma quantidade maior de erros, há uma probabilidade maior de que estes erros se anulem no decorrer dos cálculos (ou não).
+	Inclusive, visando considerar todos os erros de todas as equações, foi empregado o Método dos Mínimos Quadrados na Seção \ref{sec:dev_math}.
+
+	Além disso, uma outra fonte de erros a ser considerada é o próprio receptor e o próprio emissor. Isso porque podem existir falhas relativas à
+	emissão do sinal e falhas relativas à leitura do sinal. O equipamento do receptor pode não executar a leitura correta dos dados, estimando
+	que a potência de chegada tenha sido menor ou maior que a real, da mesma forma que o equipamento do emisssor pode não ser capaz de enviar o sinal na
+	potência esperada. Apesar de, em geral, ocasionarem erros não muito significativos no escopo geral, são erros intrísecos ao equipamento que geram
+	erros nos dados a serem processados. Novamente, uma alternativa para atenuação dos erros é a utilização de vários equipamentos na esperança de que,
+	entre uma oscilação de erros, sejam anulados no cálculo final.
+
+	\subsection{Casos Teste}
+	Aqui serão realizados alguns testes com a implementação realizada na Seção \ref{sec:dev_comp}. Serão expostas informações sobre cada caso de teste
+	e serão discorridas pequenas considerações a respeito dos resultados. A estrutura geral do caso de teste será:
+	\begin{itemize}
+		\item Aquivo de ENTRADA
+		\item Resultado Obtido
+		\item Resultado Gráfico
+		\item Discussão
+	\end{itemize}
+
+	\paragraph{Caso de Teste 1}
+	\subparagraph{Arquivo de Entrada}
+	\begin{verbatim}
+		1.55 17.63 1.35 -26.0 2.1
+		-4.02 0.00 1.35 -33.8 1.8
+		-4.40 9.60 1.35 -29.8 1.3
+		9.27 4.64 1.35 -31.2 1.4
+		9.15 12.00 1.35 -33.0 1.5
+	\end{verbatim}
+
+	\subparagraph{Resultado Obtido}
+
+	\subparagraph{Resultado Gráfico}
+
+	\subparagraph{Discussão}
+
+	\paragraph{Caso de Teste 2}
+	\subparagraph{Arquivo de Entrada}
+	\begin{verbatim}
+		1.55 17.63 1.35 -26.0 2.1
+		-4.02 0.00 1.35 -33.8 1.8
+		-4.40 9.60 1.35 -29.8 1.3
+		9.27 4.64 1.35 -31.2 1.4
+		9.15 12.00 1.35 -33.0 1.5
+	\end{verbatim}
+
+	\subparagraph{Resultado Obtido}
+
+	\subparagraph{Resultado Gráfico}
+
+	\subparagraph{Discussão}
 
 	\section{Conclusão}
 	\label{sec:conclusao}
 	%TODO: Expor a análise a respeito do problema e como é solucionado pelo que foi proposto.
+
 
 	%TODO: Corrigir as referências
 	\bibliographystyle{sbc}
