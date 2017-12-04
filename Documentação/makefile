@@ -1,3 +1,4 @@
+SHELL=cmd.exe
 all: execute
 	@echo "Sucesso!"
 
