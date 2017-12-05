@@ -199,6 +199,31 @@
 	\]
 	$$\iff$$
 	\begin{equation}A_{m\times3} \times X_{3\times1} = B_{m\times1}\label{eq:res}\end{equation}
+	onde:
+	\[
+	A =
+	\begin{bmatrix}
+		2(x_2-x_1) & 2(y_2-y_1) & 2(z_2-z_1)\\
+		2(x_3-x_1) & 2(y_3-y_1) & 2(z_3-z_1)\\
+		\vdots & \vdots & \vdots\\
+		2(x_m-x_1) & 2(y_m-y_1) & 2(z_m-z_1)\\
+		2(x_m-x_2) & 2(y_m-y_2) & 2(z_m-z_2)
+	\end{bmatrix},
+	X =
+	\begin{bmatrix}
+		x\\
+		y\\
+		z
+	\end{bmatrix},
+	B =
+	\begin{bmatrix}
+		c_2-c_1\\
+		c_3-c_1\\
+		\vdots\\
+		c_m-c_1\\
+		c_m-c_2
+	\end{bmatrix}
+	\]
 
 	Nota-se que, para $m=3$, então $A$ é uma matriz quadrada e, então, é válido:
 	\[A^{-1}\times A \times X = A^{-1}\times B\]
@@ -238,7 +263,8 @@
 	\label{sec:imple}
 	O desenvolvimento será feito em \textbf{MATLAB}, por apresentar um grande conjunto de bibliotecas
 	que auxiliam operações básicas e ter naturalidade em trabalhar com matrizes, o que, de acordo com o
-	desenvolvimento matemático prévio, é peça-chave para a resolução do problema.
+	desenvolvimento matemático prévio, é peça-chave para a resolução do problema. Nesse momento,
+	não há preocupação em relação à otimização do código.
 
 	Incia-se com o formato do arquivo que servirá de entrada. Para cada linha $k$ do arquivo, espera-se
 	$5$ valores separados por espaços em branco, sendo eles referentes ao $k$-ésimo receptor:
@@ -248,34 +274,178 @@
 	Além disso, tem-se uma função específica para tratar a entrada dos dados e dividí-la em $3$ matrizes:
 	\begin{itemize}
 		\item $M$ que conterá as coordenadas $x_k, y_k, z_k$, devendo ter ordem $m\times3$;
-		\item $P$ que conterá os valorees $p^k_0$, devendo ter ordem $m\times1$;
-		\item $L$ que conterá os valorees $\mathcal{L}^k$, devendo ter ordem $m\times1$.
+		\item $P$ que conterá os valores $p^k_0$, devendo ter ordem $m\times1$;
+		\item $L$ que conterá os valores $\mathcal{L}^k$, devendo ter ordem $m\times1$.
 	\end{itemize}
 
-	%TODO:Função pra fazer isso ai
+	\begin{Verbatim}[fontsize=\footnotesize]
+function [M, P, L] = getInput(filename)
+  delimiterIn = ' ';
+  headerlinesIn = 1;
+  Input = importdata(filename, delimiterIn, headerlinesIn);
+  [rows, columns] = size(Input.data);
+  for k = 1:rows
+    pk = Input.data(k, columns-1);
+    lk = Input.data(k, columns);
+    M(k, 1:columns-2) = Input.data(k, 1:columns-2);
+    P(k) = pk;
+    L(k) = lk;
+  end
+  L = L.';
+  P = P.';
+end
+	\end{Verbatim}
+
+	Em seguida, deve-se ler a entrada das potências lidas pelos receptores em relação à fonte emissora ($p^k$,
+	explanado na Seção \ref{sec:fund_teor}). Para tanto, desenvolve-se uma nova função que será responsável
+	por devolver uma matriz coluna $Pk$ com os valores lidos.
+
+	\begin{Verbatim}[fontsize=\footnotesize]
+function [ Pk ] = getPotencias( filename )
+	delimiterIn = ' ';
+	headerlinesIn = 1;
+	Input = importdata(filename, delimiterIn, headerlinesIn);
+	Pk = Input.data.';
+end
+	\end{Verbatim}
 
 	Após realizar a leitura da entrada, será necessário calcular os valores de raio ($d_k$), que serão
 	armazenados em uma matriz coluna $D$. A função resposável por realizar tal cálculo está abaixo:
 
-	%TODO: Função pra fazer isso ai
+	\begin{Verbatim}[fontsize=\footnotesize]
+function [ D ] = calcularD(P, L, Pk)
+  [rows, ~] = size(P);
+  for k = 1:rows
+    D(k) = 10^((P(k) - Pk(k))/(10*L(k)));
+  end
+  D = D.';
+end
+	\end{Verbatim}
 
 	Em seguida, calcula-se os coeficientes das diferenças entre as equações, que foram representadas
 	pelas matrizes $A$ e $B$, conforme descrito na Seção \ref{sec:dev_math}. No código, também refere-se às matrizes
 	em questão por $A$ e $B$. Tal função é descrita abaixo:
-
-	%TODO: Função pra fazer isso ai
+	\begin{Verbatim}[fontsize=\footnotesize]
+function [ A, B ] = calcularAB( M, D )
+  L1 = M(1, :);
+  t1 = (sumsqr(M(1,:)) - D(1));
+  [rows, ~] = size(M);
+  for k = 2:rows
+    A(k-1, :) = (M(k,:) - L1)*2;
+    B(k-1) = (sumsqr(M(k,:)) - D(k)) - t1;
+  end
+  A(rows, :) = (M(rows,:) - M(2,:))*2;
+  B(rows) = (sumsqr(M(rows,:)) - D(rows)) - (sumsqr(M(2,:)) - D(2));
+  B = B.';
+end
+	\end{Verbatim}
 
 	Por fim, com as matrizes $A$, $X$ e $B$, é possível implementar a equação \ref{eq:final} da seguinte
 	forma:
+	\begin{Verbatim}[fontsize=\footnotesize]
+X = inv(A.'*A)*A.'*B;
+	\end{Verbatim}
 
-	%TODO: Função pra fazer isso ai
+	Assim, temos um \textbf{Script Principal} que realiza a chamada das funções (em arquivos separados) da seguinte
+	forma:
+	\begin{Verbatim}[fontsize=\footnotesize]
+[M, P, L] = getInput('input');
+Pk = getPotencias('caso_teste');
+D = calcularD(P, L, Pk);
+[A,B] = calcularAB(M, D);
+X = inv(A.'*A)*A.'*B;
+	\end{Verbatim}
+
+	Por fim, fazer-se-á uma pequena alteração no código da função principal, onde se adiciona um laço para percorrer
+	todas as colunas da matriz $Pk$ (que inicialmente prevê-se de ordem $m\times1$ e agora terá ordem $m\times c$, onde
+	$c$ é o número de medições diferentes que os receptores reealizaram, ou seja, o \textbf{número de casos de teste}) e
+	armazenará cada solução em uma coluna da matriz $Res$. Além disso, fora adicionado um \textit{script} para a construção
+	gráfica da solução.
+	\begin{Verbatim}[fontsize=\footnotesize]
+clear all;
+[M, P, L] = getInput('input');
+Pk = getPotencias('caso_teste');
+[~, columns] = size(Pk);
+for k = 1:columns
+  clear D A B X
+  D = calcularD(M, P, L, Pk(:,k));
+  [A,B] = calcularAB(M, D);
+  X = (inv(A.'*A)*A.')*B;
+  Res(:,k) = X;
+  drawCircle(M, D, X);
+end
+disp(Res);
+	\end{Verbatim}
+	Assim, a $i$-ésima coluna de $Res$ guarda o resultado para a medição de potência armazenada na $i$-ésima coluna de $Pk$.
+	A função $drawCircle$ fora projetada para imprimir \textbf{gráficos bidimensionais} e implementada como se segue:
+	\begin{Verbatim}[fontsize=\footnotesize]
+function drawCircle(M, D, X)
+  [rM, ~] = size(M);
+  figure; hold on;
+  for x = 1:rM
+    x0 = M(x, 1); y0 = M(x, 2); r = D(x);
+    t = 0:0.1:2*pi+0.1;
+    x = r*cos(t) + x0;
+    y = r*sin(t) + y0;
+    plot(x0, y0, 'ok');
+    plot(x, y, 'b');
+  end
+  plot(X(1), X(2), 'om');
+  hold off;
+end
+	\end{Verbatim}
 
 	\subsubsection{Otimização}
 	\label{sec:opt}
 	Aqui alguns trechos de código são resumidos a fim de se descartar operações desnecessárias.
 	Como as implementações das funções em MATLAB são otimizadas \cite{matlabguide}, não há preocupação
-	em alterar seus códigos. Assim, a otimização consiste em poupar operações desnecessárias, o que resulta
-	no código abaixo:
+	em alterar seus códigos. Assim, a otimização consiste em poupar operações desnecessárias e aumentar
+	a precisão dos cálculos. Estima-se uma precisão de $30$ dígitos decimais para os cálculos. Por fim,
+	tem-se o código final alterado abaixo:
+	\begin{Verbatim}[fontsize=\footnotesize]
+clear all;
+digits(31);
+[M, P, L] = getInput('input');
+Pk = getPotencias('caso_teste');
+[~, columns] = size(Pk);
+for k = 1:columns
+  clear D A B X
+  D = calcularD(M, P, L, Pk(:,k));
+  [A,B] = calcularAB(M, D);
+  X = (inv(A.'*A)*A.')*B;
+  Res(:,k) = X;
+  drawCircle(M, D, X);
+end
+disp(Res);
+
+function [ D ] = calcularD(P, L, Pk)
+[rows, ~] = size(P);
+for k = 1:rows
+D(k) = vpa(10^((P(k) - Pk(k))/(10*L(k))));
+end
+D = D.';
+end
+
+function [ A, B ] = calcularAB( M, D )
+L1 = M(1, :);
+digits(31);
+t1 = (sumsqr(M(1,:)) - D(1));
+[rows, ~] = size(M);
+for k = 2:rows
+A(k-1, :) = vpa((M(k,:) - L1)*2);
+B(k-1) = (sumsqr(M(k,:)) - D(k)) - t1;
+end
+A(rows, :) = vpa((M(rows,:) - M(2,:))*2);
+B(rows) = (sumsqr(M(rows,:)) - D(rows)) - (sumsqr(M(2,:)) - D(2));
+B = B.';
+end
+	\end{Verbatim}
+
+	Em termos práticos, o código está dividido em arquivos conforme o neceesário para chamadas de funções.
+	As demais funções não foram modificadas.
+
+	Outras otimizações poderiam ser realizadas no sentido de pré-alocar as matrizes utilizadas nos cálculos iterativos.
+	Porém, a pré-alocação, apesar de diminuir o tempo de execução, pode afetar a precisão.
 
 	\subsubsection{Limitações}
 	\label{sec:lim}
@@ -345,43 +515,76 @@
 	Aqui serão realizados alguns testes com a implementação realizada na Seção \ref{sec:dev_comp}. Serão expostas informações sobre cada caso de teste
 	e serão discorridas pequenas considerações a respeito dos resultados. A estrutura geral do caso de teste será:
 	\begin{itemize}
-		\item Aquivo de ENTRADA
+		\item Aquivo de Entrada das Potências
 		\item Resultado Obtido
 		\item Resultado Gráfico
 		\item Discussão
 	\end{itemize}
 
-	\paragraph{Caso de Teste 1}
-	\subparagraph{Arquivo de Entrada}
-	\begin{verbatim}
-		1.55 17.63 1.35 -26.0 2.1
-		-4.02 0.00 1.35 -33.8 1.8
-		-4.40 9.60 1.35 -29.8 1.3
-		9.27 4.64 1.35 -31.2 1.4
-		9.15 12.00 1.35 -33.0 1.5
-	\end{verbatim}
+	Para a execução dos casos teste serão \textbf{desconsideradas} as alturas (coordenadas do eixo $z$) dos receptores. Isso porque todos estão
+	dispostos na mesma altura o que, ao calcular a diferença entre as equações resultaria em uma fila nula na matriz $A$ e não atenderia à condição
+	$det(A)\neq0$ explanada na Seção \ref{sec:dev_math}. Assim, para todos os casos de teste, aplicar-se-á o seguinte arquivo de entrada:
+	\begin{Verbatim}[fontsize=\footnotesize]
+		xk yk pk0 Lk
+		1.55 17.63 -26.0 2.1
+		-4.02 0.00 -33.8 1.8
+		-4.40 9.60 -29.8 1.3
+		9.27 4.64 -31.2 1.4
+		9.15 12.00 -33.0 1.5
+	\end{Verbatim}
+
+	\paragraph{Caso de Teste 1}: Posição Real do Emissor: ($0.00$, $9.00$).
+	\subparagraph{Arquivo de Entrada das Potências}
+	\begin{Verbatim}[fontsize=\footnotesize]
+		p1 p2 p3 p4 p5
+		-48.4 -50.6 -32.2 -47.4 -46.3
+	\end{Verbatim}
 
 	\subparagraph{Resultado Obtido}
+	\begin{Verbatim}[fontsize=\footnotesize]
+		0.8791627839758111735352172170082
+		8.443588564564251193188780411229
+	\end{Verbatim}
 
 	\subparagraph{Resultado Gráfico}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[scale = 0.7]{ct_1}
+		\caption{Resultado gráfico do Caso de Teste 1}
+	\end{figure}
 
 	\subparagraph{Discussão}
+	Neste caso, o teste convergiu para o valor esperado com dada precisão. É possível
+	visualizar no resultado gráfico a estimativa da posição da fonte emissora na interseção
+	da maior quantidade de receptores, o que infere uma boa qualidade na estimativa.
 
-	\paragraph{Caso de Teste 2}
-	\subparagraph{Arquivo de Entrada}
-	\begin{verbatim}
-		1.55 17.63 1.35 -26.0 2.1
-		-4.02 0.00 1.35 -33.8 1.8
-		-4.40 9.60 1.35 -29.8 1.3
-		9.27 4.64 1.35 -31.2 1.4
-		9.15 12.00 1.35 -33.0 1.5
-	\end{verbatim}
+	\paragraph{Caso de Teste 2}: Posição Real do Emissor: ($3.00$, $3.00$).
+	\subparagraph{Arquivo de Entrada das Potências}
+	\begin{Verbatim}[fontsize=\footnotesize]
+		p1 p2 p3 p4 p5
+		-46.9 -46.4 -41.2 -45.8 -48.7
+	\end{Verbatim}
 
 	\subparagraph{Resultado Obtido}
+	\begin{Verbatim}[fontsize=\footnotesize]
+		0.7646725892734015773152996447686
+  	8.438517018906009038428898093488
+	\end{Verbatim}
 
 	\subparagraph{Resultado Gráfico}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[scale = 0.7]{ct_2}
+		\caption{Resultado gráfico do Caso de Teste 2}
+	\end{figure}
 
 	\subparagraph{Discussão}
+	Neste caso, o teste não convergiu para o valor esperado com dada precisão. Pela
+	análise dos valores estima-se que tenha ocorrido uma discrepância significativa
+	entre os dados coletados pelos receptores, visto que a posição esperada não foi
+	atingida em nenhuma das coordenadas analisadas. Isso pode significar uma falha
+	decorrente de variações do ambiente ou limitações gerais, conforma abordado nas
+	Seções \ref{sec:lim} e \ref{sec:discussao}.
 
 	\section{Conclusão}
 	\label{sec:conclusao}

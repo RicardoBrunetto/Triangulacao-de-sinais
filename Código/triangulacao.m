@@ -1,13 +1,21 @@
-V1 = [1 2 3];
-V2 = [4 5 6];
-V3 = [7 8 9];
-
-M = [V1; V2; V3];
-O = [1, 2, 3];
-
-function R = calcular_raios(M, O)
-  for k = 1:size(M,1)
-    row = M(k, :);
-    R(k,1) = sum((row-O).^2);
-  end
+clear all;
+digits(31);
+[M, P, L] = getInput('input');
+Pk = getPotencias('caso_teste');
+[~, columns] = size(Pk);
+for k = 1:columns
+    clear D A B X
+    D = calcularD(M, P, L, Pk(:,k));
+    [A,B] = calcularAB(M, D);
+    X = (inv(A.'*A)*A.')*B;
+    Res(:,k) = X;
+    drawCircle(M, D, X);
 end
+disp(Res);
+%
+% function R = calcular_raios(M, O)
+%   for k = 1:size(M,1)
+%     row = M(k, :);
+%     R(k,1) = sum((row-O).^2);
+%   end
+% end
