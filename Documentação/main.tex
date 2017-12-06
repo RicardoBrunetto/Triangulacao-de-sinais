@@ -107,10 +107,10 @@
 		F(x,y,z) =
 		\left \{
 		\begin{array}{cl}
-			(x - x_1)^2 + (y - y_1)^2 + (z - z_1)^2 = d_1\\
-			(x - x_2)^2 + (y - y_2)^2 + (z - z_2)^2 = d_2\\
+			(x - x_1)^2 + (y - y_1)^2 + (z - z_1)^2 = d_1^2\\
+			(x - x_2)^2 + (y - y_2)^2 + (z - z_2)^2 = d_2^2\\
 			\vdots \\
-			(x - x_m)^2 + (y - y_m)^2 + (z - z_m)^2 = d_m\\
+			(x - x_m)^2 + (y - y_m)^2 + (z - z_m)^2 = d_m^2\\
 		\end{array}
 		\right.
 	\end{align*}
@@ -119,10 +119,10 @@
 		F(x,y,z) =
 		\left \{
 		\begin{array}{cl}
-			x^2 - 2x_1x + x_1^2 + y^2 - 2y_1y + y_1^2 + z^2 - 2z_1z + z_1^2 = d_1\\
-			x^2 - 2x_2x + x_2^2 + y^2 - 2y_2y + y_2^2 + z^2 - 2z_2z + z_2^2 = d_2\\
+			x^2 - 2x_1x + x_1^2 + y^2 - 2y_1y + y_1^2 + z^2 - 2z_1z + z_1^2 = d_1^2\\
+			x^2 - 2x_2x + x_2^2 + y^2 - 2y_2y + y_2^2 + z^2 - 2z_2z + z_2^2 = d_2^2\\
 			\vdots \\
-			x^2 - 2x_mx + x_m^2 + y^2 - 2y_my + y_m^2 + z^2 - 2z_mz + z_m^2 = d_m\\
+			x^2 - 2x_mx + x_m^2 + y^2 - 2y_my + y_m^2 + z^2 - 2z_mz + z_m^2 = d_m^2\\
 		\end{array}
 		\right.
 	\end{align*}
@@ -139,7 +139,7 @@
 		x^2 + y^2 + z^2 - 2(x_mx + y_my + z_mz) = c_m\\
 	\end{array}
 	\]
-	onde $c_k = d_k - (x_k^2 + y_k^2 + z_k^2)$.
+	onde $c_k = d_k^2 - (x_k^2 + y_k^2 + z_k^2)$.
 
 	É necessário, nesse ponto, remover a não-linearidade do sistema, ou seja, transformá-lo
 	em um sistema de equações lineares. Isso porque o método de resolução que se pretende
@@ -233,8 +233,8 @@
 	\[X = A^{-1}\times B\]
 	e tem-se a resolução do sistema.
 
-	Contudo, para situações em que $m>3$, tem-se um \textbf{Sistema Redundante}. Conforme explanado na
-	Seção \ref{sec:fund_teor}, o Método dos Mínimos Quadrados pode ser aplicado
+	Contudo, para situações em que $m>3$, tem-se um \textbf{Sistema Redundante}.
+	O Método dos Mínimos Quadrados pode ser aplicado
 	para normalizar sistemas de equações, removendo ambiguidades sem descartar equações.
 
 	Nota-se que, $A_{m\times3}$ possui transposta $A_{3\times m}^t$. Nota-se, ainda que:
@@ -328,14 +328,14 @@ end
 	\begin{Verbatim}[fontsize=\footnotesize]
 function [ A, B ] = calcularAB( M, D )
   L1 = M(1, :);
-  t1 = (sumsqr(M(1,:)) - D(1));
+  t1 = (sumsqr(M(1,:)) - D(1)^2);
   [rows, ~] = size(M);
   for k = 2:rows
     A(k-1, :) = (M(k,:) - L1)*2;
-    B(k-1) = (sumsqr(M(k,:)) - D(k)) - t1;
+    B(k-1) = (sumsqr(M(k,:)) - D(k)^2) - t1;
   end
   A(rows, :) = (M(rows,:) - M(2,:))*2;
-  B(rows) = (sumsqr(M(rows,:)) - D(rows)) - (sumsqr(M(2,:)) - D(2));
+  B(rows) = (sumsqr(M(rows,:)) - D(rows)^2) - (sumsqr(M(2,:)) - D(2)^2);
   B = B.';
 end
 	\end{Verbatim}
@@ -382,15 +382,15 @@ disp(Res);
 function drawCircle(M, D, X)
   [rM, ~] = size(M);
   figure; hold on;
-  for x = 1:rM
-    x0 = M(x, 1); y0 = M(x, 2); r = D(x);
+  for v = 1:rM
+    x0 = M(v, 1); y0 = M(v, 2); r = D(v);
     t = 0:0.1:2*pi+0.1;
     x = r*cos(t) + x0;
     y = r*sin(t) + y0;
     plot(x0, y0, 'ok');
     plot(x, y, 'b');
   end
-  plot(X(1), X(2), 'om');
+  plot(X(1), X(2), 'sm');
   hold off;
 end
 	\end{Verbatim}
@@ -419,25 +419,25 @@ end
 disp(Res);
 
 function [ D ] = calcularD(P, L, Pk)
-[rows, ~] = size(P);
-for k = 1:rows
-D(k) = vpa(10^((P(k) - Pk(k))/(10*L(k))));
-end
-D = D.';
+  [rows, ~] = size(P);
+  for k = 1:rows
+    D(k) = vpa(10^((P(k) - Pk(k))/(10*L(k))));
+  end
+  D = D.';
 end
 
 function [ A, B ] = calcularAB( M, D )
-L1 = M(1, :);
-digits(31);
-t1 = (sumsqr(M(1,:)) - D(1));
-[rows, ~] = size(M);
-for k = 2:rows
-A(k-1, :) = vpa((M(k,:) - L1)*2);
-B(k-1) = (sumsqr(M(k,:)) - D(k)) - t1;
-end
-A(rows, :) = vpa((M(rows,:) - M(2,:))*2);
-B(rows) = (sumsqr(M(rows,:)) - D(rows)) - (sumsqr(M(2,:)) - D(2));
-B = B.';
+  L1 = M(1, :);
+  digits(31);
+  t1 = (sumsqr(M(1,:))) - (D(1)^2);
+  [rows, ~] = size(M);
+  for k = 2:rows
+    A(k-1, :) = vpa((M(k,:) - L1)*2);
+    B(k-1) = (sumsqr(M(k,:)) - (D(k)^2)) - t1;
+  end
+  A(rows, :) = vpa((M(rows,:) - M(2,:))*2);
+  B(rows) = (sumsqr(M(rows,:)) - (D(rows)^2)) - (sumsqr(M(2,:))) - (D(2)^2);
+  B = B.';
 end
 	\end{Verbatim}
 
@@ -515,7 +515,7 @@ end
 	Aqui serão realizados alguns testes com a implementação realizada na Seção \ref{sec:dev_comp}. Serão expostas informações sobre cada caso de teste
 	e serão discorridas pequenas considerações a respeito dos resultados. A estrutura geral do caso de teste será:
 	\begin{itemize}
-		\item Aquivo de Entrada das Potências
+  	\item Aquivo de Entrada das Potências
 		\item Resultado Obtido
 		\item Resultado Gráfico
 		\item Discussão
@@ -542,8 +542,8 @@ end
 
 	\subparagraph{Resultado Obtido}
 	\begin{Verbatim}[fontsize=\footnotesize]
-		0.8791627839758111735352172170082
-		8.443588564564251193188780411229
+		-2.368493645703412079205054921115
+		 6.965300208295944084328975518723
 	\end{Verbatim}
 
 	\subparagraph{Resultado Gráfico}
@@ -556,7 +556,8 @@ end
 	\subparagraph{Discussão}
 	Neste caso, o teste convergiu para o valor esperado com dada precisão. É possível
 	visualizar no resultado gráfico a estimativa da posição da fonte emissora na interseção
-	da maior quantidade de receptores, o que infere uma boa qualidade na estimativa.
+	da maior quantidade de receptores, o que infere uma boa qualidade na estimativa.\\
+	Distância euclidiana do valor real: $3.1225$m.
 
 	\paragraph{Caso de Teste 2}: Posição Real do Emissor: ($3.00$, $3.00$).
 	\subparagraph{Arquivo de Entrada das Potências}
@@ -567,8 +568,8 @@ end
 
 	\subparagraph{Resultado Obtido}
 	\begin{Verbatim}[fontsize=\footnotesize]
-		0.7646725892734015773152996447686
-  	8.438517018906009038428898093488
+		-2.712266401905423815845074621182
+		 7.280794012347773118603672408388
 	\end{Verbatim}
 
 	\subparagraph{Resultado Gráfico}
@@ -584,12 +585,8 @@ end
 	entre os dados coletados pelos receptores, visto que a posição esperada não foi
 	atingida em nenhuma das coordenadas analisadas. Isso pode significar uma falha
 	decorrente de variações do ambiente ou limitações gerais, conforma abordado nas
-	Seções \ref{sec:lim} e \ref{sec:discussao}.
-
-	\section{Conclusão}
-	\label{sec:conclusao}
-	%TODO: Expor a análise a respeito do problema e como é solucionado pelo que foi proposto.
-
+	Seções \ref{sec:lim} e \ref{sec:discussao}.\\
+	Distância euclidiana do valor real: $7.1383$m.
 
 	%TODO: Corrigir as referências
 	\bibliographystyle{sbc}
